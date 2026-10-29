@@ -78,11 +78,22 @@ export async function POST(request: NextRequest) {
     }
 
     const fingerprint = await createPreviewFingerprint(source, referenceFile, presetId);
+    let taskCreationTimedOut = false;
     const outcome = await createPreviewTaskIdempotently(
       store,
       idempotencyKey,
       fingerprint,
-      () => createHairstyleTask(source, referenceFile, presetId),
+      async () => {
+        try {
+          return await createHairstyleTask(source, referenceFile, presetId);
+        } catch (error) {
+          taskCreationTimedOut =
+            error instanceof YouCamError && error.code === "TASK_CREATION_TIMEOUT";
+          throw error;
+        }
+      },
+      (error) =>
+        error instanceof YouCamError && error.taskCreationOutcome !== undefined,
     );
     if (outcome.kind === "processing") {
       return NextResponse.json(
@@ -93,8 +104,9 @@ export async function POST(request: NextRequest) {
     if (outcome.kind === "uncertain") {
       return NextResponse.json(
         {
-          error:
-            "The provider may have created this preview, but its status is uncertain. Do not retry with a new request key.",
+          error: taskCreationTimedOut
+            ? "YouCam task creation timed out. The provider may have accepted the task; its status is uncertain. Do not retry with a new request key."
+            : "The provider may have created this preview, but its status is uncertain. Do not retry with a new request key.",
         },
         { status: 409 },
       );

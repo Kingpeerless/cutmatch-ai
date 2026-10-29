@@ -149,6 +149,7 @@ export default function Home() {
   const [referenceLabel, setReferenceLabel] = useState("");
   const [referencePreview, setReferencePreview] = useState("");
   const [result, setResult] = useState("");
+  const [resultImageError, setResultImageError] = useState("");
   const [resultTaskId, setResultTaskId] = useState("");
   const [comparison, setComparison] = useState(50);
   const [busy, setBusy] = useState(false);
@@ -247,6 +248,7 @@ export default function Home() {
       idempotencyKey.current = null;
       setSource(file);
       setResult("");
+      setResultImageError("");
       setResultTaskId("");
     } else {
       idempotencyKey.current = null;
@@ -269,6 +271,7 @@ export default function Home() {
     setBusy(true);
     setError("");
     setResult("");
+    setResultImageError("");
     setResultTaskId("");
     setStatusText("Preparing your photo…");
     try {
@@ -307,9 +310,28 @@ export default function Home() {
       setStatusText("Your hairstyle preview is in progress…");
       const deadline = Date.now() + 5 * 60 * 1000;
       while (Date.now() < deadline) {
-        await new Promise((resolve) => window.setTimeout(resolve, 10_000));
-        const poll = await fetch(`/api/tasks/${encodeURIComponent(created.taskId)}`);
-        const task: TaskResult & { error?: string } = await poll.json();
+        const waitMs = Math.min(10_000, deadline - Date.now());
+        await new Promise((resolve) => window.setTimeout(resolve, waitMs));
+        const remainingMs = deadline - Date.now();
+        if (remainingMs <= 0) break;
+
+        const pollController = new AbortController();
+        const pollTimeout = window.setTimeout(() => pollController.abort(), remainingMs);
+        let poll: Response;
+        let task: TaskResult & { error?: string };
+        try {
+          poll = await fetch(`/api/tasks/${encodeURIComponent(created.taskId)}`, {
+            signal: pollController.signal,
+          });
+          task = await poll.json();
+        } catch (reason) {
+          if (pollController.signal.aborted) {
+            throw new Error("This preview is taking longer than expected. Please try again later.");
+          }
+          throw reason;
+        } finally {
+          window.clearTimeout(pollTimeout);
+        }
         if (!poll.ok) throw new Error(task.error || "Could not check preview status.");
         if (task.task_status === "success" && task.results?.url) {
           setResult(`/api/tasks/${encodeURIComponent(created.taskId)}/result`);
@@ -332,6 +354,7 @@ export default function Home() {
 
   function tryAnotherStyle() {
     setResult("");
+    setResultImageError("");
     setResultTaskId("");
     setStatusText("");
     studioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -450,6 +473,10 @@ export default function Home() {
               are sent to YouCam for processing. Uploaded files are retained by the provider for up
               to 30 days.
             </p>
+            <div className="identity-warning" role="note">
+              <span aria-hidden="true">!</span>
+              <p><strong>A preview, not a promise.</strong> YouCam does not document a guarantee of facial identity preservation or a face mask control. Your original photo stays unchanged, but the generated result may alter facial details. Review it carefully before sharing with your barber.</p>
+            </div>
             {result && sourcePreview && (
               <section className="result-section" aria-labelledby="result-title">
                 <div className="result-heading">
@@ -468,14 +495,15 @@ export default function Home() {
                     <figcaption><span>01</span><strong>Your original</strong><small>Unchanged source photo</small></figcaption>
                   </figure>
                   <figure className="result-card">
-                    <div className="result-image"><img src={result} alt="YouCam AI-generated hairstyle preview" /></div>
+                    <div className="result-image"><img src={result} alt="YouCam AI-generated hairstyle preview" onError={() => setResultImageError("The generated preview image could not be loaded. The preview request is unchanged; try Save preview or check your connection.")} /></div>
                     <figcaption><span>02</span><strong>AI hairstyle preview</strong><small>May differ from the original face and requested style</small></figcaption>
                   </figure>
                 </div>
+                {resultImageError && <p role="alert">{resultImageError}</p>}
                 <div className="comparison-block">
                   <label htmlFor="comparison-range">Overlay comparison <output>{comparison}%</output></label>
                   <div className="comparison" style={{ "--split": `${comparison}%` } as React.CSSProperties}>
-                    <img src={result} alt="" className="comparison-after" />
+                    <img src={result} alt="" className="comparison-after" onError={() => setResultImageError("The generated preview image could not be loaded. The preview request is unchanged; try Save preview or check your connection.")} />
                     <div className="comparison-before"><img src={sourcePreview} alt="" /></div>
                     <span className="compare-label before-label">ORIGINAL</span><span className="compare-label after-label">PREVIEW</span>
                     <div className="compare-divider" aria-hidden="true">↔</div>
@@ -696,10 +724,6 @@ export default function Home() {
                 <span>Retrying the same inputs in this tab reuses the same request key. Changing an input starts a new request and may use credits.</span>
                 <span>If the durable request store is unavailable, generation fails safely before a task starts.</span>
               </div>
-            </div>
-            <div className="identity-warning" role="note">
-              <span aria-hidden="true">!</span>
-              <p><strong>A preview, not a promise.</strong> YouCam does not document a guarantee of facial identity preservation or a face mask control. Your original photo stays unchanged, but the generated result may alter facial details. Review it carefully before sharing with your barber.</p>
             </div>
           </div>
         </div>

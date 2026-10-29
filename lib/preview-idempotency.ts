@@ -29,6 +29,8 @@ export interface PreviewIdempotencyStore {
     ownerToken: string,
     taskId: string,
   ): Promise<void>;
+  // Only the matching owner may release a processing claim after a definite no-task outcome.
+  release(key: string, fingerprint: string, ownerToken: string): Promise<void>;
   // Only the matching owner may transition processing to uncertain; completed state must not be downgraded.
   markUncertain(key: string, fingerprint: string, ownerToken: string): Promise<void>;
 }
@@ -69,6 +71,17 @@ if record.state == "completed" or record.state == "uncertain" then return "UNCHA
 if record.state ~= "processing" then return "STATE_MISMATCH" end
 record.state = "uncertain"
 redis.call("SET", KEYS[1], cjson.encode(record))
+return "OK"
+`;
+
+const RELEASE_SCRIPT = `
+local raw = redis.call("GET", KEYS[1])
+if not raw then return "MISSING" end
+local record = cjson.decode(raw)
+if record.fingerprint ~= ARGV[1] then return "FINGERPRINT_MISMATCH" end
+if record.ownerToken ~= ARGV[2] then return "OWNER_MISMATCH" end
+if record.state ~= "processing" then return "STATE_MISMATCH" end
+redis.call("DEL", KEYS[1])
 return "OK"
 `;
 
@@ -208,6 +221,9 @@ export function createUpstashPreviewIdempotencyStore(
     async complete(key, fingerprint, ownerToken, taskId) {
       await transition(COMPLETE_SCRIPT, key, fingerprint, ownerToken, taskId);
     },
+    async release(key, fingerprint, ownerToken) {
+      await transition(RELEASE_SCRIPT, key, fingerprint, ownerToken);
+    },
     async markUncertain(key, fingerprint, ownerToken) {
       await transition(UNCERTAIN_SCRIPT, key, fingerprint, ownerToken);
     },
@@ -247,6 +263,7 @@ export async function createPreviewTaskIdempotently(
   key: string,
   fingerprint: string,
   createTask: () => Promise<string>,
+  isDefinitelyNotCreated: (error: unknown) => boolean = () => false,
 ): Promise<PreviewTaskOutcome> {
   if (!store) {
     throw new PreviewIdempotencyError(
@@ -282,7 +299,19 @@ export async function createPreviewTaskIdempotently(
   let taskId: string;
   try {
     taskId = await createTask();
-  } catch {
+  } catch (error) {
+    if (isDefinitelyNotCreated(error)) {
+      try {
+        await store.release(key, fingerprint, ownerToken);
+      } catch {
+        throw new PreviewIdempotencyError(
+          "The task was not created, but its retry record could not be released safely. Contact support before retrying.",
+          503,
+        );
+      }
+      throw error;
+    }
+
     try {
       await store.markUncertain(key, fingerprint, ownerToken);
     } catch {

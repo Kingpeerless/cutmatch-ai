@@ -2145,10 +2145,10 @@ button.photo-reference-action:disabled {
 
 /* Premium barber-tech studio direction */
 :root {
-  --cyan: #71e7f2;
-  --cyan-soft: #71e7f244;
-  --line-lit: #394b49;
-  --surface-glass: #151a19;
+  --cyan: var(--lime);
+  --cyan-soft: #b8ff3d38;
+  --line-lit: #394338;
+  --surface-glass: rgb(21 26 24 / 82%);
 }
 
 html {
@@ -2157,15 +2157,15 @@ html {
 
 body {
   background:
-    radial-gradient(ellipse at 78% 38%, #15363a33 0, transparent 34%),
-    radial-gradient(ellipse at 4% 73%, #263a1830 0, transparent 31%),
+    radial-gradient(ellipse at 78% 38%, #b8ff3d0d 0, transparent 34%),
+    radial-gradient(ellipse at 4% 73%, #f7f3e908 0, transparent 31%),
     var(--charcoal);
 }
 
 .topbar {
   border-bottom-color: #263332;
-  background: #0f1111ed;
-  backdrop-filter: blur(16px);
+  background: rgb(15 17 17 / 88%);
+  backdrop-filter: blur(18px) saturate(135%);
 }
 
 .brand-symbol-bg {
@@ -2189,8 +2189,8 @@ body {
 
 .hero {
   background:
-    radial-gradient(ellipse at 84% 54%, #12353a42, transparent 42%),
-    linear-gradient(115deg, #0f1111 48%, #101918 100%);
+    radial-gradient(ellipse at 84% 54%, #b8ff3d0c, transparent 42%),
+    linear-gradient(115deg, #0f1111 48%, #151916 100%);
   border-bottom-color: #283534;
 }
 
@@ -2200,7 +2200,7 @@ body {
   right: 3%;
   width: 1px;
   height: 70%;
-  background: linear-gradient(transparent, #71e7f255, transparent);
+  background: linear-gradient(transparent, #b8ff3d55, transparent);
   content: "";
 }
 
@@ -2210,17 +2210,17 @@ body {
 }
 
 .hero-visual {
-  border-color: #3a5c5a;
-  box-shadow: 0 24px 70px #0008, 0 0 36px #71e7f210;
+  border-color: #4a5942;
+  box-shadow: 0 24px 70px #0008, 0 0 36px #b8ff3d10;
 }
 
 .hero-visual-label > span {
   background: var(--cyan);
-  box-shadow: 0 0 10px #71e7f299;
+  box-shadow: 0 0 10px #b8ff3d99;
 }
 
 .hero-visual-label {
-  border-color: #71e7f24a;
+  border-color: #b8ff3d4a;
 }
 
 .steps-section {
@@ -2251,7 +2251,7 @@ body {
   right: 8%;
   left: 8%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #71e7f23a, #b8ff3d50, transparent);
+  background: linear-gradient(90deg, transparent, #b8ff3d3a, #b8ff3d50, transparent);
   content: "";
 }
 
@@ -2268,7 +2268,7 @@ body {
   max-width: 390px;
   padding: 14px 16px;
   border-left: 1px solid var(--cyan);
-  background: linear-gradient(90deg, #152020, transparent);
+  background: linear-gradient(90deg, #1d2118, transparent);
 }
 
 .workflow-grid {
@@ -2286,9 +2286,10 @@ body {
   border-color: #33413e;
   border-radius: 13px;
   background:
-    linear-gradient(145deg, #1a201f 0%, #141918 75%),
+    linear-gradient(145deg, rgb(26 32 31 / 94%) 0%, rgb(20 25 24 / 94%) 75%),
     var(--surface);
-  box-shadow: 0 18px 48px #0003, inset 0 1px #ffffff05;
+  box-shadow: 0 18px 48px #0003, inset 0 1px #ffffff08;
+  backdrop-filter: blur(14px);
 }
 
 .photo-panel {
@@ -2313,7 +2314,7 @@ body {
 .step-number {
   border-color: #4b716b;
   color: var(--cyan);
-  box-shadow: 0 0 14px #71e7f20b;
+  box-shadow: 0 0 14px #b8ff3d0b;
 }
 
 .workflow-heading-title .brand-symbol-bg {
@@ -2327,7 +2328,7 @@ body {
   background:
     radial-gradient(ellipse at 50% 40%, #1d3331 0%, transparent 56%),
     #101514;
-  box-shadow: inset 0 0 44px #71e7f208;
+  box-shadow: inset 0 0 44px #b8ff3d08;
 }
 
 .upload-box:hover:not(:disabled) {
@@ -2338,7 +2339,7 @@ body {
 .upload-box.has-image {
   min-height: 420px;
   border-color: #668c84;
-  box-shadow: 0 0 0 1px #71e7f22a, 0 0 30px #71e7f210;
+  box-shadow: 0 0 0 1px #b8ff3d2a, 0 0 30px #b8ff3d10;
 }
 
 .upload-box.has-image > img {
@@ -2350,7 +2351,7 @@ body {
 .upload-icon {
   border-color: #62857b;
   color: var(--cyan);
-  box-shadow: 0 0 22px #71e7f218;
+  box-shadow: 0 0 22px #b8ff3d18;
 }
 
 .upload-box strong {
@@ -2366,7 +2367,7 @@ body {
 }
 
 .change-photo {
-  border-color: #71e7f266;
+  border-color: #b8ff3d66;
 }
 
 .photo-guidance {
@@ -2402,7 +2403,7 @@ body {
 }
 
 .reference-upload-icon {
-  border-color: #71e7f277;
+  border-color: #b8ff3d77;
   color: var(--cyan);
 }
 
@@ -2502,7 +2503,7 @@ body {
 
 .photo-reference-badge {
   padding: 6px;
-  border: 1px solid #71e7f244;
+  border: 1px solid #b8ff3d44;
   border-radius: 4px;
   color: var(--cyan);
   font-size: 7px;
@@ -2611,7 +2612,7 @@ body {
 }
 
 .preset-badge {
-  border-color: #71e7f259;
+  border-color: #b8ff3d59;
   border-radius: 4px;
   color: var(--cyan);
 }
@@ -2652,32 +2653,37 @@ body {
 .studio-action-column {
   grid-area: action;
   min-width: 0;
+  position: sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 8;
+  align-self: end;
+  padding: 10px;
+  border: 1px solid #536044;
+  border-radius: 13px;
+  background: rgb(19 23 21 / 86%);
+  box-shadow: 0 16px 42px #0007, inset 0 1px #ffffff12;
+  backdrop-filter: blur(20px) saturate(140%);
 }
 
 .generate-row {
-  align-items: stretch;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 14px;
   margin-top: 0;
-  padding: 16px;
-  border: 1px solid #4b6748;
-  border-radius: 11px;
-  background:
-    radial-gradient(ellipse at 20% 0, #b8ff3d10, transparent 60%),
-    #141a17;
-  box-shadow: 0 12px 35px #0003;
+  padding: 2px;
 }
 
 .generate-button {
-  width: 100%;
-  min-height: 54px;
-  border-radius: 8px;
+  width: auto;
+  min-width: 190px;
+  min-height: 50px;
+  flex: 0 0 min(240px, 42%);
+  border-radius: 999px;
   font-size: 14px;
-  box-shadow: 0 0 22px #b8ff3d25;
+  box-shadow: 0 0 22px #b8ff3d1c;
 }
 
 .generate-button:hover:not(:disabled) {
-  box-shadow: 0 0 28px #b8ff3d42;
+  box-shadow: 0 0 28px #b8ff3d35;
   transform: translateY(-1px);
 }
 
@@ -2686,11 +2692,12 @@ body {
 }
 
 .generate-disclosures {
+  min-width: 0;
   gap: 6px;
 }
 
 .generate-disclosures > span {
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .generate-disclosures > span + span {
@@ -2894,7 +2901,7 @@ body {
 @media (max-width: 720px) {
   .hero {
     background:
-      radial-gradient(ellipse at 88% 60%, #12353a38, transparent 46%),
+      radial-gradient(ellipse at 88% 60%, #b8ff3d0a, transparent 46%),
       var(--charcoal);
   }
 
@@ -2924,7 +2931,16 @@ body {
   }
 
   .generate-row {
-    padding: 13px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 9px;
+    padding: 0;
+  }
+
+  .studio-action-column {
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    padding: 9px;
+    border-radius: 12px;
   }
 
   .result-grid {
@@ -2954,7 +2970,10 @@ body {
   }
 
   .generate-button {
+    width: 100%;
+    min-width: 0;
     min-height: 52px;
+    flex-basis: auto;
   }
 }
 
@@ -2999,7 +3018,7 @@ body {
   width: fit-content;
   margin-top: 2px;
   padding: 4px 7px;
-  border: 1px solid #71e7f244;
+  border: 1px solid #b8ff3d44;
   border-radius: 999px;
   background: #1a2420;
   color: var(--cyan);
@@ -3127,6 +3146,55 @@ body {
   .upload-box.has-image {
     height: min(60vh, 460px);
   }
+
+  .studio-action-column {
+    padding: 7px;
+  }
+
+  .generate-row {
+    gap: 6px;
+  }
+
+  .generate-disclosures {
+    gap: 3px;
+  }
+
+  .generate-disclosures > span {
+    font-size: 9px;
+    line-height: 1.35;
+  }
+
+  .error-message,
+  .status-message {
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 720px) and (max-height: 680px) {
+  .studio-action-column {
+    padding: 7px;
+  }
+
+  .generate-row {
+    gap: 6px;
+  }
+
+  .generate-disclosures {
+    gap: 3px;
+  }
+
+  .generate-disclosures > span {
+    line-height: 1.35;
+  }
+
+  .error-message,
+  .status-message {
+    margin-bottom: 6px;
+    padding: 8px 10px;
+  }
 }
 
 .demo-access-page {
@@ -3135,7 +3203,7 @@ body {
   grid-template-rows: auto 1fr;
   padding: 26px clamp(20px, 7vw, 96px);
   background:
-    radial-gradient(ellipse at 76% 54%, #15363a33 0, transparent 36%),
+    radial-gradient(ellipse at 76% 54%, #b8ff3d0b 0, transparent 36%),
     var(--charcoal);
 }
 
@@ -3220,4 +3288,53 @@ body {
   margin: 12px 0 0;
   color: #e5c891;
   font-size: 11px;
+}
+
+.photo-reference-facial-hair-filter {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  color: #b7c0b8;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.photo-reference-facial-hair-filter input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--lime);
+}
+
+.photo-reference-facial-hair-filter input:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.photo-reference-facial-hair-indicator {
+  display: inline-flex;
+  align-self: flex-start;
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid #516650;
+  border-radius: 999px;
+  background: #19221a;
+  color: #d1e1c5;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.photo-reference-badge.candidate {
+  border-color: #9c7d4d;
+  background: #211d16;
+  color: #e6ca8d;
+}
+
+.photo-reference-card.candidate .photo-reference-copy strong {
+  overflow: visible;
+  line-height: 1.35;
+  text-overflow: clip;
+  white-space: normal;
 }

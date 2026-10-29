@@ -79,9 +79,9 @@ The provider catalog checked on October 25, 2026 returned 116 templates. That sn
 
 ## Local photo references
 
-The studio's photo-reference gallery is separate from the live YouCam preset catalog and from a user's generated result. It currently includes 10 selectable local reference photos and two inspiration-only photos. Every selectable photo was visually checked for close framing that makes the haircut, hairline, or braid pattern inspectable. Selectable cards have a **Use as reference** action and are labeled as unverified: the existing v2.1 request flow uploads a selected image as `ref_file_id`, but that does not verify that YouCam can reproduce the named look. Searching, filtering, and selecting photos do not contact YouCam or spend credits. A selected photo is sent for processing only after the user presses **Generate preview**. The braid-texture detail remains inspiration-only because its exact style cannot be identified; the long-braids profile remains inspiration-only because its framing is too wide. A previously labeled "Braided updo" photo was removed from the gallery because the photo does not clearly show an updo. The landing-page hero uses the cornrows portrait and is labeled as inspiration, not a generated result.
+The studio's photo-reference gallery is separate from the live YouCam preset catalog and from a user's generated result. It currently includes 16 selectable local reference photos (10 Pexels photos and six AI-generated collage crops) and two inspiration-only photos. The six collage crops are visibly marked as candidates; their licensing and YouCam transfer quality have not been verified. Selectable cards are labeled as unverified: the existing v2.1 request flow uploads a selected image as `ref_file_id`, but that does not verify that YouCam can reproduce the named look. Searching, filtering, and selecting photos do not contact YouCam or spend credits. A selected photo is sent for processing only after the user presses **Generate preview**. The braid-texture detail remains inspiration-only because its exact style cannot be identified; the long-braids profile remains inspiration-only because its framing is too wide. A previously labeled "Braided updo" photo was removed from the gallery because the photo does not clearly show an updo. The landing-page hero uses the cornrows portrait and is labeled as inspiration, not a generated result.
 
-These photographs are from individual Pexels photo pages. The [Pexels license](https://www.pexels.com/license/) allows use on websites and apps; attribution is not required, but is included here and in the gallery.
+The ten existing photo references are from individual Pexels photo pages. The [Pexels license](https://www.pexels.com/license/) allows use on websites and apps; attribution is not required, but is included here and in the gallery. The six AI-generated collage crops are listed separately below; their licensing has not been verified.
 
 Newly sourced photos are stored locally as optimized JPEGs (maximum 900 × 1350 pixels, quality 82). Two gallery images are close crops made from the already licensed originals to better show the hair; they are not new photographs and retain the original source credits. The original source files were not overwritten.
 
@@ -100,11 +100,22 @@ Newly sourced photos are stored locally as optimized JPEGs (maximum 900 × 1350 
 | `public/images/hairstyles/long-braids-profile.jpg` | Long braids in profile — inspiration only; framing is too wide for a close reference | Kabe Rossi | [Photo 15290414](https://www.pexels.com/photo/model-in-long-braids-wearing-denim-dungarees-15290414/) |
 | `public/images/hairstyles/braids-detail.jpg` | Textured braid detail — inspiration only; exact braid style unverified | Malama Mushitu | [Photo 34191088](https://www.pexels.com/photo/close-up-of-textured-braids-on-a-woman-34191088/) |
 
-The gallery filters photos by broad hairstyle category and also includes explicit empty filters for low, mid, and high taper fades; 360 waves; burst fade; sponge twists with taper; knotless braids; Fulani braids; Ghana braids; passion twists; butterfly locs; and curly bob. Those specific close-up references still need suitable verified photos. Other unillustrated styles include two-strand twists, Senegalese twists, braided bob, wash-and-go curls, twist-out, high puff, tapered natural cut, silk-press style, wigs, and a Nigerian barbershop cut. The locs photo is not labeled as twists, and the barber-process photo is not presented as a finished haircut. No hairstyle in this photo gallery is marked as a verified YouCam preset or generation-tested result.
+The six AI-generated candidate crops are selectable custom references, not provider presets. Their labels come from the collage; the "Sponge twists" label is provisional. The high-fade photo is categorized only under the broad short-cuts/fades category, not the more specific high-taper category. None of these candidates has been tested with YouCam, and none guarantees transfer quality or facial-hair preservation.
+
+| Local file | Proposed hairstyle label | Notes |
+| --- | --- | --- |
+| `public/images/hairstyle-candidates/low-taper-textured-afro.png` | Low taper + textured afro | AI-generated collage crop; licensing and transfer quality unverified |
+| `public/images/hairstyle-candidates/mid-taper.png` | Mid taper | AI-generated collage crop; licensing and transfer quality unverified |
+| `public/images/hairstyle-candidates/high-fade.png` | High fade | AI-generated collage crop; licensing and transfer quality unverified; not categorized as a high taper |
+| `public/images/hairstyle-candidates/burst-fade.png` | Burst fade | AI-generated collage crop; licensing and transfer quality unverified |
+| `public/images/hairstyle-candidates/360-waves.png` | 360 waves | AI-generated collage crop; licensing and transfer quality unverified |
+| `public/images/hairstyle-candidates/sponge-twists.png` | Sponge twists | AI-generated collage crop; exact styling method, licensing, and transfer quality unverified |
+
+Other unillustrated styles include high taper fade, knotless braids, Fulani braids, Ghana braids, passion twists, butterfly locs, curly bob, two-strand twists, Senegalese twists, braided bob, wash-and-go curls, twist-out, high puff, tapered natural cut, silk-press style, wigs, and a Nigerian barbershop cut. The locs photo is not labeled as twists, and the barber-process photo is not presented as a finished haircut. No hairstyle in this photo gallery is marked as a verified YouCam preset or generation-tested result.
 
 ### Targeted reference-photo search (October 26, 2026)
 
-No new images were added in this search. Pexels search results and candidate individual pages were checked, but no candidate met both the close-up requirement and the evidence needed for the exact requested hairstyle label. The gallery continues to show these empty categories rather than treating a similar-looking style as a match:
+No Pexels images were added in this search. Pexels search results and candidate individual pages were checked, but no candidate met both the close-up requirement and the evidence needed for the exact requested hairstyle label. Six separate AI-generated collage crops were later added as explicitly unverified candidates; they are not represented as licensed Pexels images or tested YouCam results.
 
 | Empty category | Why no photo was added |
 | --- | --- |
@@ -121,11 +132,12 @@ No new images were added in this search. Pexels search results and candidate ind
 | Butterfly locs | Search surfaced a multi-person portrait with unspecified natural hairstyles, not a clearly identifiable butterfly-loc close-up. |
 | Curly bob | A bob candidate showed straight hair from the back; curly portraits found did not verify a bob shape. |
 
-No selected search candidate has been added to the project or represented as a provider preset. All listed categories remain available as filters so users can see that suitable reference images are still needed.
+No selected Pexels search candidate was added to the project or represented as a provider preset. All listed categories remain available as filters; where candidate crops appear, they remain clearly marked as unverified.
 
 The current close-up review found the following:
 
-- **Suitable selectable close-ups:** Natural Afro, defined waves, cornrows, long box braids, locs with faded sides, short buzz cut (new crop), textured pixie cut, cornrows with long braids, long braids (new crop; exact pattern unspecified), and braided buns.
+- **Selectable Pexels close-ups:** Natural Afro, defined waves, cornrows, long box braids, locs with faded sides, short buzz cut (new crop), textured pixie cut, cornrows with long braids, long braids (new crop; exact pattern unspecified), and braided buns.
+- **Selectable AI-generated candidates:** Low taper + textured afro, mid taper, high fade, burst fade, 360 waves, and sponge twists. These have not been tested with YouCam; the sponge-twist label is provisional.
 - **Inspiration-only:** The wide long-braids profile and braid-texture detail. These cannot be selected or sent as reference inputs.
 - **Excluded from the gallery:** `braided-updo.jpg` was not an accurate updo reference; the source photo shows long braids rather than a clearly identifiable braided updo. `low-fade-barbershop.jpg` shows a cut in progress, not a finished style.
 

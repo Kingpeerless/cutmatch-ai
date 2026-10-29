@@ -6,6 +6,7 @@ import {
   createPreviewTaskIdempotently,
   PreviewIdempotencyError,
 } from "../lib/preview-idempotency.ts";
+import { YouCamError } from "../lib/youcam.ts";
 
 class TestStore {
   records = new Map();
@@ -24,6 +25,14 @@ class TestStore {
     assert.equal(record?.fingerprint, fingerprint);
     assert.equal(record?.ownerToken, ownerToken);
     this.records.set(key, { fingerprint, state: "completed", ownerToken, taskId });
+  }
+
+  async release(key, fingerprint, ownerToken) {
+    const record = this.records.get(key);
+    assert.equal(record?.fingerprint, fingerprint);
+    assert.equal(record?.ownerToken, ownerToken);
+    assert.equal(record?.state, "processing");
+    this.records.delete(key);
   }
 
   async markUncertain(key, fingerprint, ownerToken) {
@@ -114,6 +123,105 @@ test("uncertain provider response is not retried", async () => {
   assert.deepEqual(first, { kind: "uncertain" });
   assert.deepEqual(retry, { kind: "uncertain" });
   assert.equal(providerSideEffects, 1);
+});
+
+test("task-creation timeout remains uncertain and is never retried", async () => {
+  const store = new TestStore();
+  let providerCalls = 0;
+  const first = await createPreviewTaskIdempotently(store, "request-timeout", "fp-timeout", async () => {
+    providerCalls += 1;
+    throw new YouCamError(
+      "YouCam task creation timed out. The provider may have accepted the task.",
+      504,
+      "TASK_CREATION_TIMEOUT",
+    );
+  });
+  const retry = await createPreviewTaskIdempotently(store, "request-timeout", "fp-timeout", async () => {
+    providerCalls += 1;
+    return "duplicate-task";
+  });
+
+  assert.deepEqual(first, { kind: "uncertain" });
+  assert.deepEqual(retry, { kind: "uncertain" });
+  assert.equal(providerCalls, 1);
+});
+
+test("pre-task image upload failure releases the claim and can be retried", async () => {
+  const store = new TestStore();
+  let createCalls = 0;
+  const isDefinitelyNotCreated = (error) =>
+    error instanceof YouCamError && error.taskCreationOutcome === "not-created";
+
+  await assert.rejects(
+    createPreviewTaskIdempotently(
+      store,
+      "request-upload-failure",
+      "fp-upload",
+      async () => {
+        createCalls += 1;
+        throw new YouCamError("Image upload failed.", 502, undefined, "not-created");
+      },
+      isDefinitelyNotCreated,
+    ),
+    (error) => error instanceof YouCamError,
+  );
+  assert.equal(store.records.has("request-upload-failure"), false);
+
+  const retry = await createPreviewTaskIdempotently(
+    store,
+    "request-upload-failure",
+    "fp-upload",
+    async () => {
+      createCalls += 1;
+      return "task-after-upload-retry";
+    },
+    isDefinitelyNotCreated,
+  );
+  assert.deepEqual(retry, {
+    kind: "completed",
+    taskId: "task-after-upload-retry",
+    replayed: false,
+  });
+  assert.equal(createCalls, 2);
+});
+
+test("definitive task POST rejection releases the claim and can be retried", async () => {
+  const store = new TestStore();
+  let createCalls = 0;
+  const isDefinitelyNotCreated = (error) =>
+    error instanceof YouCamError && error.taskCreationOutcome === "rejected";
+
+  await assert.rejects(
+    createPreviewTaskIdempotently(
+      store,
+      "request-post-rejection",
+      "fp-rejection",
+      async () => {
+        createCalls += 1;
+        throw new YouCamError("YouCam rejected the task request.", 401, undefined, "rejected");
+      },
+      isDefinitelyNotCreated,
+    ),
+    (error) => error instanceof YouCamError,
+  );
+  assert.equal(store.records.has("request-post-rejection"), false);
+
+  const retry = await createPreviewTaskIdempotently(
+    store,
+    "request-post-rejection",
+    "fp-rejection",
+    async () => {
+      createCalls += 1;
+      return "task-after-rejection";
+    },
+    isDefinitelyNotCreated,
+  );
+  assert.deepEqual(retry, {
+    kind: "completed",
+    taskId: "task-after-rejection",
+    replayed: false,
+  });
+  assert.equal(createCalls, 2);
 });
 
 test("task ID persistence failure is marked uncertain and not recreated", async () => {
@@ -211,6 +319,12 @@ function mockRedisFetch(records = new Map(), options = {}) {
             records.set(key, JSON.stringify(record));
             result = "OK";
           }
+        } else if (script.includes('redis.call("DEL"')) {
+          if (record.state !== "processing") result = "STATE_MISMATCH";
+          else {
+            records.delete(key);
+            result = "OK";
+          }
         } else {
           result = "UNKNOWN_SCRIPT";
         }
@@ -288,6 +402,24 @@ test("Upstash adapter atomically rejects mismatches and preserves completed stat
   const existing = await store.claim("client-key", "b".repeat(64), "new-owner");
   assert.equal(existing.record.state, "completed");
   assert.equal(existing.record.taskId, "task-1");
+});
+
+test("Upstash adapter releases only a matching processing claim", async () => {
+  const mock = mockRedisFetch();
+  const store = createUpstashPreviewIdempotencyStore(
+    TEST_REDIS_URL,
+    TEST_REDIS_TOKEN,
+    mock.fetcher,
+  );
+  await store.claim("release-key", "f".repeat(64), "owner-release");
+
+  await assert.rejects(
+    store.release("release-key", "f".repeat(64), "wrong-owner"),
+    (error) => error instanceof PreviewIdempotencyError && error.status === 503,
+  );
+  await store.release("release-key", "f".repeat(64), "owner-release");
+  const reclaimed = await store.claim("release-key", "f".repeat(64), "new-owner");
+  assert.deepEqual(reclaimed, { kind: "claimed" });
 });
 
 test("Upstash adapter fails closed for unavailable and malformed responses", async () => {

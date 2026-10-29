@@ -3,6 +3,21 @@ import sharp from "sharp";
 const API_BASE = "https://yce-api-01.makeupar.com";
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PROVIDER_REQUEST_TIMEOUT_MS = 15_000;
+const FILE_REQUEST_TIMEOUT_MS = 8_000;
+const IMAGE_UPLOAD_TIMEOUT_MS = 12_000;
+const TASK_CREATION_TIMEOUT_MS = 12_000;
+const TASK_POLL_TIMEOUT_MS = 8_000;
+const RESULT_IMAGE_TIMEOUT_MS = 12_000;
+
+type YouCamTimeoutCode =
+  | "FILE_REQUEST_TIMEOUT"
+  | "IMAGE_UPLOAD_TIMEOUT"
+  | "TASK_CREATION_TIMEOUT"
+  | "TASK_POLL_TIMEOUT"
+  | "RESULT_IMAGE_TIMEOUT";
+
+type TaskCreationOutcome = "not-created" | "rejected";
 
 type ProviderError = {
   error?: string;
@@ -31,11 +46,40 @@ export type HairstyleTemplate = {
 };
 
 export class YouCamError extends Error {
+  readonly status: number;
+  readonly code?: YouCamTimeoutCode;
+  readonly taskCreationOutcome?: TaskCreationOutcome;
+
   constructor(
     message: string,
-    readonly status = 502,
+    status = 502,
+    code?: YouCamTimeoutCode,
+    taskCreationOutcome?: TaskCreationOutcome,
   ) {
     super(message);
+    this.status = status;
+    this.code = code;
+    this.taskCreationOutcome = taskCreationOutcome;
+  }
+}
+
+export async function fetchWithTimeout<T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+  timeoutCode?: YouCamTimeoutCode,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await operation(controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new YouCamError(timeoutMessage, 504, timeoutCode);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -50,9 +94,17 @@ function apiKey() {
   return key;
 }
 
-async function providerFetch(path: string, init: RequestInit = {}) {
+async function providerFetch(
+  path: string,
+  init: RequestInit = {},
+  timeoutMs = PROVIDER_REQUEST_TIMEOUT_MS,
+  timeoutMessage = "The YouCam request timed out. Please try again.",
+  timeoutCode?: YouCamTimeoutCode,
+) {
   const key = apiKey();
   let response: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     response = await fetch(`${API_BASE}${path}`, {
       ...init,
@@ -60,21 +112,35 @@ async function providerFetch(path: string, init: RequestInit = {}) {
         Authorization: `Bearer ${key}`,
         ...init.headers,
       },
+      signal: controller.signal,
       cache: "no-store",
     });
-  } catch {
+    const body = (await response.json().catch(() => null)) as ProviderError | null;
+    if (controller.signal.aborted) {
+      throw new YouCamError(timeoutMessage, 504, timeoutCode);
+    }
+    if (!response.ok) {
+      const message =
+        body?.error_code === "CreditInsufficiency"
+          ? "The YouCam API account is out of units. Check its API console."
+          : body?.error || `The YouCam API returned an error (${response.status}).`;
+      const taskCreationOutcome =
+        timeoutCode === "TASK_CREATION_TIMEOUT" &&
+        [400, 401, 429].includes(response.status)
+          ? "rejected"
+          : undefined;
+      throw new YouCamError(message, response.status, undefined, taskCreationOutcome);
+    }
+    return body;
+  } catch (error) {
+    if (error instanceof YouCamError) throw error;
+    if (controller.signal.aborted) {
+      throw new YouCamError(timeoutMessage, 504, timeoutCode);
+    }
     throw new YouCamError("Could not reach the YouCam API. Please try again.");
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const body = (await response.json().catch(() => null)) as ProviderError | null;
-  if (!response.ok) {
-    const message =
-      body?.error_code === "CreditInsufficiency"
-        ? "The YouCam API account is out of units. Check its API console."
-        : body?.error || `The YouCam API returned an error (${response.status}).`;
-    throw new YouCamError(message, response.status);
-  }
-  return body;
 }
 
 export async function listTemplates(startingToken?: string) {
@@ -119,38 +185,52 @@ async function uploadImage(file: File) {
   }
 
   const fileName = `${crypto.randomUUID()}.jpg`;
-  const fileResponse = (await providerFetch("/s2s/v2.0/file", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      files: [
-        {
-          content_type: "image/jpeg",
-          file_name: fileName,
-          file_size: image.byteLength,
-        },
-      ],
-    }),
-  })) as FileApiResponse | null;
+  const fileResponse = (await providerFetch(
+    "/s2s/v2.0/file",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        files: [
+          {
+            content_type: "image/jpeg",
+            file_name: fileName,
+            file_size: image.byteLength,
+          },
+        ],
+      }),
+    },
+    FILE_REQUEST_TIMEOUT_MS,
+    "The YouCam file request timed out. Please try again.",
+    "FILE_REQUEST_TIMEOUT",
+  )) as FileApiResponse | null;
 
   const fileInfo = fileResponse?.data?.files?.[0];
   const uploadRequest = fileInfo?.requests?.[0];
   if (!fileInfo?.file_id || !uploadRequest?.url || !uploadRequest.method) {
     throw new YouCamError("The YouCam upload API returned an incomplete response.");
   }
+  const uploadUrl = uploadRequest.url;
+  const uploadMethod = uploadRequest.method;
 
-  let uploadResponse: Response;
   try {
-    uploadResponse = await fetch(uploadRequest.url, {
-      method: uploadRequest.method,
-      headers: uploadRequest.headers,
-      body: new Uint8Array(image),
-    });
-  } catch {
+    const uploadResponse = await fetchWithTimeout(
+      (signal) => fetch(uploadUrl, {
+        method: uploadMethod,
+        headers: uploadRequest.headers,
+        body: new Uint8Array(image),
+        signal,
+      }),
+      IMAGE_UPLOAD_TIMEOUT_MS,
+      "Uploading an image to YouCam timed out. Its preview request status may be uncertain; do not retry with a new request key.",
+      "IMAGE_UPLOAD_TIMEOUT",
+    );
+    if (!uploadResponse.ok) {
+      throw new YouCamError(`The image upload failed (${uploadResponse.status}).`);
+    }
+  } catch (error) {
+    if (error instanceof YouCamError) throw error;
     throw new YouCamError("The image upload failed. Please try again.");
-  }
-  if (!uploadResponse.ok) {
-    throw new YouCamError(`The image upload failed (${uploadResponse.status}).`);
   }
   return fileInfo.file_id;
 }
@@ -160,19 +240,39 @@ export async function createHairstyleTask(
   reference: File | null,
   templateId: string | null,
 ) {
-  const sourceId = await uploadImage(source);
-  const referenceId = reference ? await uploadImage(reference) : null;
+  let sourceId: string;
+  let referenceId: string | null;
+  try {
+    sourceId = await uploadImage(source);
+    referenceId = reference ? await uploadImage(reference) : null;
+  } catch (error) {
+    if (error instanceof YouCamError) {
+      throw new YouCamError(
+        error.message,
+        error.status,
+        error.code,
+        "not-created",
+      );
+    }
+    throw error;
+  }
 
   const body: Record<string, string> = { src_file_id: sourceId };
   if (referenceId) body.ref_file_id = referenceId;
   else if (templateId) body.template_id = templateId;
   else throw new YouCamError("Choose a hairstyle or upload a reference photo.", 400);
 
-  const result = (await providerFetch("/s2s/v2.1/task/hair-transfer", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })) as { data?: { task_id?: string } } | null;
+  const result = (await providerFetch(
+    "/s2s/v2.1/task/hair-transfer",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    TASK_CREATION_TIMEOUT_MS,
+    "Uploading an image to YouCam timed out. The upload outcome is uncertain. Do not retry with a new request key.",
+    "TASK_CREATION_TIMEOUT",
+  )) as { data?: { task_id?: string } } | null;
 
   if (!result?.data?.task_id) {
     throw new YouCamError("The YouCam API did not return a task ID.");
@@ -183,6 +283,10 @@ export async function createHairstyleTask(
 export async function getTaskStatus(taskId: string) {
   const result = (await providerFetch(
     `/s2s/v2.1/task/hair-transfer/${encodeURIComponent(taskId)}`,
+    {},
+    TASK_POLL_TIMEOUT_MS,
+    "Checking YouCam task status timed out. Please try again.",
+    "TASK_POLL_TIMEOUT",
   )) as {
     data?: {
       task_status?: "running" | "success" | "error";
@@ -213,8 +317,14 @@ export async function downloadTaskResult(taskId: string) {
 
   let response: Response;
   try {
-    response = await fetch(resultUrl, { cache: "no-store" });
-  } catch {
+    response = await fetchWithTimeout(
+      (signal) => fetch(resultUrl, { cache: "no-store", signal }),
+      RESULT_IMAGE_TIMEOUT_MS,
+      "Retrieving the preview image timed out. Please try again.",
+      "RESULT_IMAGE_TIMEOUT",
+    );
+  } catch (error) {
+    if (error instanceof YouCamError) throw error;
     throw new YouCamError("Could not retrieve the preview image. Please try again.");
   }
   if (!response.ok || !response.body) {
