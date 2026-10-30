@@ -1,6 +1,6 @@
 # CutMatch AI
 
-**Your style. Before the chair.** CutMatch AI lets you preview a YouCam AI Hairstyle Generator v2.1 hairstyle on your own photo before visiting the barber. The app uses a small Next.js server layer to keep the YouCam API key out of browser code. Its dark charcoal, warm cream, and electric-lime interface uses locally stored Pexels hairstyle photographs and an original logo.
+**Your style. Before the chair.** CutMatch AI lets you preview a YouCam AI Hairstyle Generator v2.1 hairstyle on your own photo before visiting the barber. The app uses a small Next.js server layer to keep the YouCam API key out of browser code. Its dark charcoal, warm cream, and electric-lime interface uses separately sourced Pexels hairstyle photographs, AI-generated hairstyle references, and an original logo.
 
 ## Requirements
 
@@ -100,7 +100,7 @@ Newly sourced photos are stored locally as optimized JPEGs (maximum 900 × 1350 
 | `public/images/hairstyles/long-braids-profile.jpg` | Long braids in profile — inspiration only; framing is too wide for a close reference | Kabe Rossi | [Photo 15290414](https://www.pexels.com/photo/model-in-long-braids-wearing-denim-dungarees-15290414/) |
 | `public/images/hairstyles/braids-detail.jpg` | Textured braid detail — inspiration only; exact braid style unverified | Malama Mushitu | [Photo 34191088](https://www.pexels.com/photo/close-up-of-textured-braids-on-a-woman-34191088/) |
 
-The six AI-generated candidate crops are selectable custom references, not provider presets. Their labels come from the collage; the "Sponge twists" label is provisional. The high-fade photo is categorized only under the broad short-cuts/fades category, not the more specific high-taper category. None of these candidates has been tested with YouCam, and none guarantees transfer quality or facial-hair preservation.
+The six AI-generated candidate crops are selectable custom references, not provider presets. They are a separate, earlier set from the 24 portraits described below. Their labels come from the collage; the "Sponge twists" label is provisional. The high-fade photo is categorized only under the broad short-cuts/fades category, not the more specific high-taper category. None of these candidates has been tested with YouCam, and none guarantees transfer quality or facial-hair preservation.
 
 | Local file | Proposed hairstyle label | Notes |
 | --- | --- | --- |
@@ -110,6 +110,12 @@ The six AI-generated candidate crops are selectable custom references, not provi
 | `public/images/hairstyle-candidates/burst-fade.png` | Burst fade | AI-generated collage crop; licensing and transfer quality unverified |
 | `public/images/hairstyle-candidates/360-waves.png` | 360 waves | AI-generated collage crop; licensing and transfer quality unverified |
 | `public/images/hairstyle-candidates/sponge-twists.png` | Sponge twists | AI-generated collage crop; exact styling method, licensing, and transfer quality unverified |
+
+### AI Hairstyle Styles portraits
+
+The separate set of 24 portraits in `public/images/hairstyle-portraits/` was cropped from a hairstyle collage generated with Nano Banana through the user's Kolbo AI account. The individual portraits are stored as local files in the `men/` and `women/` subdirectories. This is distinct from the Pexels photographs listed above and from the six earlier candidate crops in `public/images/hairstyle-candidates/`.
+
+This origin and cropping process are based on user-provided information; they have not been independently verified against the Kolbo account, original collage, or generation records. No license or commercial-use permission is established by the fact that an image is AI-generated. Before commercial or public use, review the applicable Nano Banana model and Kolbo service/account terms, and assess any third-party rights that may apply, including depicted likenesses or material incorporated in the generated images. The project has not verified these terms or rights. See the [24-portrait licensing audit](public/images/hairstyle-gallery-v2/LICENSING-AUDIT.md).
 
 Other unillustrated styles include high taper fade, knotless braids, Fulani braids, Ghana braids, passion twists, butterfly locs, curly bob, two-strand twists, Senegalese twists, braided bob, wash-and-go curls, twist-out, high puff, tapered natural cut, silk-press style, wigs, and a Nigerian barbershop cut. The locs photo is not labeled as twists, and the barber-process photo is not presented as a finished haircut. No hairstyle in this photo gallery is marked as a verified YouCam preset or generation-tested result.
 
